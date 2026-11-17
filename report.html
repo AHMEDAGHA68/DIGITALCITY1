@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DIGITALCITY | تقديم بلاغ</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<header class="navbar"><a class="logo" href="index.html">DIGITALCITY<span>.</span></a><button class="menu-toggle" id="menuToggle" aria-label="فتح القائمة">☰</button><nav id="mainNav"><a href="index.html">الرئيسية</a><a href="index.html#services">الخدمات</a></nav><a href="about.html" class="nav-btn">عن المشروع</a></header>
+<main class="form-page"><div class="form-intro"><p class="tag">DIGITALCITY REPORT SYSTEM</p><h1>خلّي صوتك مسموع.</h1><p>اكتب تفاصيل المشكلة بدقة حتى يسهل التعرف عليها ومتابعتها.</p></div>
+<section class="form-card"><div class="form-card-heading"><div><span class="tag">نموذج البلاغ</span><h2>تقديم بلاغ جديد</h2></div><span class="form-symbol">＋</span></div>
+<form id="reportForm"><div class="form-grid">
+<div class="field"><label for="type">نوع المشكلة *</label><select id="type" required><option value="">اختر نوع المشكلة</option><option>تراكم القمامة</option><option>عطل إنارة</option><option>مشكلة في الطريق</option><option>تسرب مياه</option><option>مشكلة أخرى</option></select></div>
+<div class="field"><label for="area">المنطقة أو الشارع *</label><input id="area" maxlength="100" placeholder="مثال: شارع الجمهورية" required></div>
+<div class="field full"><label for="description">وصف المشكلة *</label><textarea id="description" rows="5" maxlength="1200" placeholder="اشرح المشكلة ومكانها وأي تفاصيل مفيدة..." required></textarea><small>بحد أقصى 1200 حرف.</small></div>
+<div class="field full"><label for="reportImage">صورة للمشكلة <em>اختياري</em></label><input id="reportImage" type="file" accept="image/jpeg,image/png,image/webp"><small>JPG أو PNG أو WebP، بحد أقصى 1.5 ميجابايت.</small><div id="imagePreview" class="image-preview"></div></div>
+</div>
+<div class="notice">هذا نموذج تعليمي؛ يتم حفظ البلاغ على هذا المتصفح فقط، وليس إرساله إلى جهة حكومية.</div>
+<button type="submit" class="main-btn submit-btn" id="submitBtn">إرسال البلاغ ←</button><p id="message" class="form-message" role="status"></p></form>
+<a href="index.html" class="back-link">العودة إلى الصفحة الرئيسية</a></section></main>
+<footer class="footer compact-footer"><div class="footer-bottom">© 2026 DIGITALCITY · مشروع تعليمي تجريبي</div></footer>
+<script src="common.js"></script><script src="report.js"></script></body></html>

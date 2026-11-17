@@ -1,0 +1,12 @@
+
+node_modules/
+.env
+.env.*
+!.env.example
+
+digitalcity.db
+digitalcity.db-shm
+digitalcity.db-wal
+
+.DS_Store
+Thumbs.db

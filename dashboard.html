@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DIGITALCITY | لوحة التحكم</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<header class="navbar"><a class="logo" href="index.html">DIGITALCITY<span>.</span></a><button class="menu-toggle" id="menuToggle" aria-label="فتح القائمة">☰</button><nav id="mainNav"><a href="index.html">الرئيسية</a><a href="report.html">تقديم بلاغ</a><a href="about.html">عن المشروع</a></nav><a href="report.html" class="nav-btn">＋ بلاغ جديد</a></header>
+<main class="dashboard"><div class="dashboard-heading"><div><p class="tag">ADMINISTRATION PANEL</p><h1>لوحة التحكم</h1><p class="muted">متابعة البلاغات وإدارة حالتها — بيانات هذا المتصفح</p></div>
+<div style="display:flex;gap:10px;flex-wrap:wrap">
+  <button class="outline-btn" id="refreshBtn">↻ تحديث البيانات</button>
+
+  <form action="/admin/logout" method="POST">
+    <button type="submit" class="outline-btn">
+      تسجيل الخروج
+    </button>
+  </form>
+</div>
+</div>
+<section class="dashboard-stats">
+<article class="dash-card"><span>إجمالي البلاغات</span><strong id="dashTotal">0</strong><small>كل البلاغات المسجلة</small></article>
+<article class="dash-card"><span>بلاغات جديدة</span><strong id="dashPending">0</strong><small>تحتاج إلى مراجعة</small></article>
+<article class="dash-card"><span>قيد المعالجة</span><strong id="dashProcessing">0</strong><small>تتم متابعتها</small></article>
+<article class="dash-card"><span>تم حلها</span><strong id="dashSolved">0</strong><small>تم تحديث حالتها</small></article></section>
+<section class="dashboard-layout"><article class="panel"><p class="tag">OVERVIEW</p><h2>ملخص الحالات</h2><div id="statusChart" class="status-chart"></div></article>
+<article class="panel"><p class="tag">QUICK INFO</p><h2>معدل الإنجاز</h2><div class="completion-number" id="completionRate">0%</div><p class="muted">نسبة البلاغات التي تم حلها من إجمالي البلاغات.</p></article></section>
+<section class="panel reports-panel"><div class="panel-heading"><div><p class="tag">REPORT MANAGEMENT</p><h2>سجل البلاغات</h2></div><span class="result-count" id="reportCount">0 بلاغ</span></div>
+<div class="filter-bar"><div class="field search-field"><label for="searchInput">بحث</label><input id="searchInput" type="search" placeholder="المنطقة أو الوصف أو رقم البلاغ..."></div>
+<div class="field"><label for="typeFilter">نوع المشكلة</label><select id="typeFilter"><option value="">كل الأنواع</option><option>تراكم القمامة</option><option>عطل إنارة</option><option>مشكلة في الطريق</option><option>تسرب مياه</option><option>مشكلة أخرى</option></select></div>
+<div class="field"><label for="statusFilter">الحالة</label><select id="statusFilter"><option value="">كل الحالات</option><option value="pending">جديد</option><option value="processing">قيد المعالجة</option><option value="solved">تم الحل</option></select></div><button class="reset-btn" id="resetFilters" type="button">إعادة ضبط</button></div>
+<div class="table-wrapper"><table><thead><tr><th>رقم البلاغ</th><th>المشكلة</th><th>المنطقة</th><th>التاريخ</th><th>الصورة</th><th>الحالة</th><th>التفاصيل</th><th>إجراء</th></tr></thead><tbody id="reportsTable"></tbody></table></div>
+<div id="emptyMessage" class="empty-state"><span>▤</span><h3>لا توجد بلاغات حتى الآن</h3><p>عند تقديم بلاغ جديد سيظهر هنا.</p><a href="report.html" class="main-btn">تقديم أول بلاغ</a></div></section>
+<footer class="footer compact-footer"><div class="footer-bottom"><span>© 2026 DIGITALCITY</span><a href="index.html">العودة للرئيسية</a></div></footer>
+<script src="common.js"></script><script src="dashboard.js"></script></body></html>
