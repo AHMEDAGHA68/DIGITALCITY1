@@ -4,33 +4,32 @@ require("dotenv").config();
 const express = require("express");
 const session = require("express-session");
 const path = require("path");
-const Database = require("better-sqlite3");
+const { Pool } = require("pg");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// إنشاء قاعدة البيانات
-const db = new Database("digitalcity.db");
+// الاتصال بقاعدة بيانات Supabase
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
-db.pragma("journal_mode = WAL");
+pool.on("error", (error) => {
+  console.error("Database connection error:", error);
+});
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS reports (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    type TEXT NOT NULL,
-    area TEXT NOT NULL,
-    description TEXT NOT NULL,
-    image TEXT,
-    status TEXT NOT NULL DEFAULT 'pending',
-    created_at TEXT NOT NULL
-  )
-`);
+// إعدادات Express
+if (process.env.NODE_ENV === "production") {
+  app.set("trust proxy", 1);
+}
 
-// إعدادات استقبال البيانات
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: "3mb" }));
 
-// الجلسات
+// إعداد الجلسات
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
@@ -38,7 +37,7 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: false,
+      secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       maxAge: 1000 * 60 * 60
     }
@@ -66,9 +65,9 @@ app.get("/dashboard.html", (req, res) => {
 });
 
 // استقبال بلاغ جديد
-app.post("/api/reports", (req, res) => {
+app.post("/api/reports", async (req, res) => {
   try {
-    const { type, area, description, image } = req.body;
+    const { type, area, description, image = "" } = req.body;
 
     if (
       typeof type !== "string" ||
@@ -106,20 +105,22 @@ app.post("/api/reports", (req, res) => {
       });
     }
 
-    const result = db.prepare(`
-      INSERT INTO reports (type, area, description, image, created_at)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(
-      type.trim(),
-      area.trim(),
-      description.trim(),
-      image || "",
-      new Date().toISOString()
+    const result = await pool.query(
+      `INSERT INTO public.reports
+       (type, area, description, image, created_at)
+       VALUES ($1, $2, $3, $4, NOW())
+       RETURNING id`,
+      [
+        type.trim(),
+        area.trim(),
+        description.trim(),
+        image
+      ]
     );
 
     res.status(201).json({
       message: "تم حفظ البلاغ بنجاح.",
-      id: result.lastInsertRowid
+      id: result.rows[0].id
     });
 
   } catch (error) {
@@ -131,11 +132,10 @@ app.post("/api/reports", (req, res) => {
   }
 });
 
-
 // عرض البلاغات للمسؤول فقط
-app.get("/api/reports", requireAdmin, (req, res) => {
+app.get("/api/reports", requireAdmin, async (req, res) => {
   try {
-    const reports = db.prepare(`
+    const result = await pool.query(`
       SELECT
         id,
         type,
@@ -143,15 +143,16 @@ app.get("/api/reports", requireAdmin, (req, res) => {
         description,
         image,
         status,
-        created_at AS createdAt
-      FROM reports
+        created_at AS "createdAt"
+      FROM public.reports
       ORDER BY id DESC
-    `).all();
+    `);
 
-    res.json(reports);
+    res.json(result.rows);
 
   } catch (error) {
     console.error(error);
+
     res.status(500).json({
       message: "تعذر تحميل البلاغات."
     });
@@ -159,7 +160,7 @@ app.get("/api/reports", requireAdmin, (req, res) => {
 });
 
 // تحديث حالة البلاغ
-app.patch("/api/reports/:id", requireAdmin, (req, res) => {
+app.patch("/api/reports/:id", requireAdmin, async (req, res) => {
   try {
     const id = Number(req.params.id);
     const { status } = req.body;
@@ -182,13 +183,14 @@ app.patch("/api/reports/:id", requireAdmin, (req, res) => {
       });
     }
 
-    const result = db.prepare(`
-      UPDATE reports
-      SET status = ?
-      WHERE id = ?
-    `).run(status, id);
+    const result = await pool.query(
+      `UPDATE public.reports
+       SET status = $1
+       WHERE id = $2`,
+      [status, id]
+    );
 
-    if (result.changes === 0) {
+    if (result.rowCount === 0) {
       return res.status(404).json({
         message: "البلاغ غير موجود."
       });
@@ -200,6 +202,7 @@ app.patch("/api/reports/:id", requireAdmin, (req, res) => {
 
   } catch (error) {
     console.error(error);
+
     res.status(500).json({
       message: "تعذر تحديث البلاغ."
     });
@@ -207,7 +210,7 @@ app.patch("/api/reports/:id", requireAdmin, (req, res) => {
 });
 
 // حذف بلاغ
-app.delete("/api/reports/:id", requireAdmin, (req, res) => {
+app.delete("/api/reports/:id", requireAdmin, async (req, res) => {
   try {
     const id = Number(req.params.id);
 
@@ -217,12 +220,12 @@ app.delete("/api/reports/:id", requireAdmin, (req, res) => {
       });
     }
 
-    const result = db.prepare(`
-      DELETE FROM reports
-      WHERE id = ?
-    `).run(id);
+    const result = await pool.query(
+      `DELETE FROM public.reports WHERE id = $1`,
+      [id]
+    );
 
-    if (result.changes === 0) {
+    if (result.rowCount === 0) {
       return res.status(404).json({
         message: "البلاغ غير موجود."
       });
@@ -234,30 +237,14 @@ app.delete("/api/reports/:id", requireAdmin, (req, res) => {
 
   } catch (error) {
     console.error(error);
+
     res.status(500).json({
       message: "تعذر حذف البلاغ."
     });
   }
 });
 
-app.get("/api/reports", requireAdmin, (req, res) => {
-  const reports = db.prepare(`
-    SELECT
-      id,
-      type,
-      area,
-      description,
-      image,
-      status,
-      created_at AS createdAt
-    FROM reports
-    ORDER BY id DESC
-  `).all();
-
-  res.json(reports);
-});
-
-// تسجيل الدخول
+// تسجيل دخول المسؤول
 app.post("/admin/login", (req, res) => {
   const { username, password } = req.body;
 
@@ -271,6 +258,7 @@ app.post("/admin/login", (req, res) => {
       }
 
       req.session.isAdmin = true;
+
       res.redirect("/dashboard.html");
     });
   } else {
@@ -288,6 +276,20 @@ app.post("/admin/logout", (req, res) => {
 // الملفات العامة
 app.use(express.static(__dirname));
 
-app.listen(PORT, () => {
-  console.log(`DIGITALCITY server running at http://localhost:${PORT}`);
-});
+// تشغيل الخادم بعد التأكد من اتصال قاعدة البيانات
+async function startServer() {
+  try {
+    await pool.query("SELECT 1");
+
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`DIGITALCITY server running on port ${PORT}`);
+      console.log("Supabase database connected successfully.");
+    });
+
+  } catch (error) {
+    console.error("Could not connect to Supabase:", error.message);
+    process.exit(1);
+  }
+}
+
+startServer();
