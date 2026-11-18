@@ -29,9 +29,18 @@ if (process.env.NODE_ENV === "production") {
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: "3mb" }));
 
-// إعداد الجلسات
+
+
+// إعداد الجلسات وتخزينها في PostgreSQL
+const PgSession = require("connect-pg-simple")(session);
+
 app.use(
   session({
+    store: new PgSession({
+      pool: pool,
+      tableName: "user_sessions",
+      createTableIfMissing: true
+    }),
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
@@ -273,23 +282,28 @@ app.post("/admin/logout", (req, res) => {
   });
 });
 
+
 // الملفات العامة
-app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, "public")));
 
-// تشغيل الخادم بعد التأكد من اتصال قاعدة البيانات
-async function startServer() {
-  try {
-    await pool.query("SELECT 1");
+// التشغيل المحلي
+if (require.main === module) {
+  async function startServer() {
+    try {
+      await pool.query("SELECT 1");
 
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`DIGITALCITY server running on port ${PORT}`);
-      console.log("Supabase database connected successfully.");
-    });
-
-  } catch (error) {
-    console.error("Could not connect to Supabase:", error.message);
-    process.exit(1);
+      app.listen(PORT, "0.0.0.0", () => {
+        console.log(`DIGITALCITY server running on port ${PORT}`);
+        console.log("Supabase database connected successfully.");
+      });
+    } catch (error) {
+      console.error("Could not connect to Supabase:", error.message);
+      process.exit(1);
+    }
   }
+
+  startServer();
 }
 
-startServer();
+// تصدير التطبيق إلى Vercel
+module.exports = app;
